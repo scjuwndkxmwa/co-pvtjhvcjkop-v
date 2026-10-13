@@ -9,7 +9,7 @@ from pathlib import Path
 RESTREAM_SERVER = os.getenv("RESTREAM_SERVER", "rtmp://live.restream.io/live")
 RESTREAM_STREAM_KEY = os.getenv(
     "RESTREAM_STREAM_KEY",
-    "re_12012590_event263b321ab25446e5b8f3f975dabd2c6a",
+    "re_12012590_event8d4fbd2ce937417fbfc8e0d48df82cdf",
 )
 VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "/app/loop.mp4"))
 LINKS_FILE = Path(os.getenv("LINKS_FILE", "/app/surah_links.txt"))
