@@ -13,7 +13,6 @@ RESTREAM_STREAM_KEY = os.getenv(
 )
 VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "/app/loop.mp4"))
 LINKS_FILE = Path(os.getenv("LINKS_FILE", "/app/surah_links.txt"))
-VIDEO_BITRATE = os.getenv("VIDEO_BITRATE", "4500k")
 AUDIO_BITRATE = os.getenv("AUDIO_BITRATE", "128k")
 AUDIO_RATE = "44100"
 AUDIO_CHANNELS = "2"
@@ -58,18 +57,16 @@ def start_live_ffmpeg():
         "-thread_queue_size", "1024",
         "-f", "s16le", "-ar", AUDIO_RATE, "-ac", AUDIO_CHANNELS, "-i", "pipe:0",
         "-map", "0:v:0", "-map", "1:a:0",
-        "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
-        "-pix_fmt", "yuv420p", "-r", "30", "-g", "60",
-        "-b:v", VIDEO_BITRATE, "-maxrate", VIDEO_BITRATE, "-bufsize", "9000k",
+        "-c:v", "copy",
         "-c:a", "aac", "-b:a", AUDIO_BITRATE, "-ar", AUDIO_RATE, "-ac", AUDIO_CHANNELS,
         "-f", "flv", target,
     ]
-    log("[LIVE] Starting FFmpeg -> Restream...")
+    log("[LIVE] Starting FFmpeg -> Restream (using video copy mode for low CPU usage)...")
     main_ffmpeg = subprocess.Popen(command, stdin=subprocess.PIPE)
     time.sleep(2)
     if main_ffmpeg.poll() is not None:
         raise RuntimeError(f"Main FFmpeg exited with code {main_ffmpeg.returncode}")
-    log("[VIDEO] loop.mp4 repeats continuously.")
+    log("[VIDEO] loop.mp4 repeats continuously without CPU overhead.")
     log("[STORAGE] Audio is streamed directly; MP3 files are not saved to disk.")
 
 
@@ -158,7 +155,7 @@ def main():
     try:
         while not stop_requested and main_ffmpeg.poll() is None:
             for number, (name, url) in enumerate(surahs, start=1):
-                if stop_requested or main_ffmpeg.poll() is not None:
+                if stop_requested or main_ffmpeg.poll() is None:
                     break
                 if not stream_surah(name, url, number, len(surahs)):
                     break
