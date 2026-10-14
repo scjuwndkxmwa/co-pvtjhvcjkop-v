@@ -61,13 +61,11 @@ def start_live_ffmpeg():
         "-c:a", "aac", "-b:a", AUDIO_BITRATE, "-ar", AUDIO_RATE, "-ac", AUDIO_CHANNELS,
         "-f", "flv", target,
     ]
-    log("[LIVE] Starting FFmpeg -> Restream (using video copy mode for low CPU usage)...")
+    log("[LIVE] Starting FFmpeg -> Restream (loop.mp4 repeating continuously)...")
     main_ffmpeg = subprocess.Popen(command, stdin=subprocess.PIPE)
     time.sleep(2)
     if main_ffmpeg.poll() is not None:
         raise RuntimeError(f"Main FFmpeg exited with code {main_ffmpeg.returncode}")
-    log("[VIDEO] loop.mp4 repeats continuously without CPU overhead.")
-    log("[STORAGE] Audio is streamed directly; MP3 files are not saved to disk.")
 
 
 def stream_surah(name, url, number, total):
@@ -150,17 +148,17 @@ def main():
         raise RuntimeError("RESTREAM_STREAM_KEY is empty.")
     surahs = load_surahs()
     log("=" * 55)
-    log("[SYSTEM] Quran MP3 URLs -> loop.mp4 -> Restream")
+    log("[SYSTEM] Quran MP3 URLs (Al-Fatiha to Al-Naas) -> loop.mp4 (Repeating) -> Restream -> Exit")
+    
     start_live_ffmpeg()
     try:
-        while not stop_requested and main_ffmpeg.poll() is None:
-            for number, (name, url) in enumerate(surahs, start=1):
-                if stop_requested or main_ffmpeg.poll() is None:
-                    break
-                if not stream_surah(name, url, number, len(surahs)):
-                    break
-            if not stop_requested and main_ffmpeg.poll() is None:
-                log("[PLAYLIST] Finished all entries; starting again from Al-Fatiha.")
+        for number, (name, url) in enumerate(surahs, start=1):
+            if stop_requested or main_ffmpeg.poll() is not None:
+                break
+            success = stream_surah(name, url, number, len(surahs))
+            if not success:
+                break
+        log("[SYSTEM] All Quran surahs finished successfully. Exiting.")
     finally:
         cleanup()
 
