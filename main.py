@@ -6,13 +6,16 @@ import sys
 import time
 from pathlib import Path
 
+# إعداد سيرفر ومفتاح البث الخاص بـ Restream
 RESTREAM_SERVER = os.getenv("RESTREAM_SERVER", "rtmp://live.restream.io/live")
 RESTREAM_STREAM_KEY = os.getenv(
     "RESTREAM_STREAM_KEY",
     "re_12012590_event91e7b27425d746f48501da455e42d3ce",
-)
-VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "/app/loop.mp4"))
-LINKS_FILE = Path(os.getenv("LINKS_FILE", "/app/surah_links.txt"))
+).strip()
+
+VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "loop.mp4"))
+LINKS_FILE = Path(os.getenv("LINKS_FILE", "surah_links.txt"))
+
 AUDIO_BITRATE = os.getenv("AUDIO_BITRATE", "128k")
 AUDIO_RATE = "44100"
 AUDIO_CHANNELS = "2"
@@ -50,6 +53,7 @@ def start_live_ffmpeg():
     global main_ffmpeg
     if not VIDEO_FILE.is_file():
         raise FileNotFoundError(f"Video not found: {VIDEO_FILE}. Add loop.mp4 to the repository root.")
+    
     target = f"{RESTREAM_SERVER.rstrip('/')}/{RESTREAM_STREAM_KEY}"
     command = [
         "ffmpeg", "-hide_banner", "-nostdin", "-loglevel", "warning",
@@ -59,6 +63,11 @@ def start_live_ffmpeg():
         "-map", "0:v:0", "-map", "1:a:0",
         "-c:v", "copy",
         "-c:a", "aac", "-b:a", AUDIO_BITRATE, "-ar", AUDIO_RATE, "-ac", AUDIO_CHANNELS,
+        "-fflags", "+genpts+discardcorrupt+nobuffer+fastseek",
+        "-avoid_negative_ts", "make_zero",
+        "-use_wallclock_as_timestamps", "1",
+        "-tune", "zerolatency",
+        "-flvflags", "no_duration_filesize",
         "-f", "flv", target,
     ]
     log("[LIVE] Starting FFmpeg -> Restream (loop.mp4 repeating continuously)...")
@@ -148,17 +157,19 @@ def main():
         raise RuntimeError("RESTREAM_STREAM_KEY is empty.")
     surahs = load_surahs()
     log("=" * 55)
-    log("[SYSTEM] Quran MP3 URLs (Al-Fatiha to Al-Naas) -> loop.mp4 (Repeating) -> Restream -> Exit")
+    log("[SYSTEM] Quran MP3 URLs -> loop.mp4 -> Restream (Continuous Loop)")
     
     start_live_ffmpeg()
     try:
-        for number, (name, url) in enumerate(surahs, start=1):
-            if stop_requested or main_ffmpeg.poll() is not None:
-                break
-            success = stream_surah(name, url, number, len(surahs))
-            if not success:
-                break
-        log("[SYSTEM] All Quran surahs finished successfully. Exiting.")
+        while not stop_requested and main_ffmpeg.poll() is None:
+            for number, (name, url) in enumerate(surahs, start=1):
+                if stop_requested or main_ffmpeg.poll() is not None:
+                    break
+                success = stream_surah(name, url, number, len(surahs))
+                if not success:
+                    break
+            if not stop_requested and main_ffmpeg.poll() is None:
+                log("[PLAYLIST] Finished all surahs; restarting from Al-Fatiha...")
     finally:
         cleanup()
 
