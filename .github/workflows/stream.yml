@@ -1,15 +1,15 @@
-name: Quran Restreamer
+name: TikTok Restreamer
 
 on:
   schedule:
-    # يشتغل تلقائياً كل 5 ساعات
+    # يشتغل كل 5 ساعات تلقائياً
     - cron: '0 */5 * * *'
   workflow_dispatch:
 
 jobs:
   run-stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 300 # ينهي الجلسة بعد 5 ساعات لتستلم الجلسة المجدولة التالية البث مباشرة
+    timeout-minutes: 340 # يغلق بعد 5 ساعات و 40 دقيقة لتغطية أي تأخير في الـ Cron
 
     steps:
       - name: Checkout repository
