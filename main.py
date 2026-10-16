@@ -42,18 +42,17 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع تمرير الكوكيز"""
+    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع دعم JS Engine والتفاف الشفرة"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
     cmd = [
         "yt-dlp",
         "-g",
-        "-f", "ba*/b",
-        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "-f", "bestaudio/best",
+        "--extractor-args", "youtube:player_client=ios,android",
         "--no-check-certificates",
         youtube_url
     ]
 
-    # إضافة خيار الكوكيز إذا كان الملف موجوداً
     if COOKIES_FILE.is_file() and COOKIES_FILE.stat().st_size > 0:
         log("[YOUTUBE] Using cookies.txt for authentication.")
         cmd.extend(["--cookies", str(COOKIES_FILE)])
