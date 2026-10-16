@@ -19,26 +19,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Set up Node.js
+      - name: Set up Node.js (JS Engine for yt-dlp)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Set up Deno (Official JS Runtime for yt-dlp)
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
 
       - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Install Python Dependencies & EJS Solvers
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --upgrade --pre yt-dlp
-          pip install --upgrade yt-dlp-get-pot
+          pip install --upgrade yt-dlp streamlink
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Create Cookies File
