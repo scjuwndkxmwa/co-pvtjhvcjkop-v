@@ -19,10 +19,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Set up Node.js (JS Engine for yt-dlp)
-        uses: actions/setup-node@v4
+      - name: Set up Deno (Official JS Runtime for yt-dlp)
+        uses: denoland/setup-deno@v2
         with:
-          node-version: '20'
+          deno-version: v2.x
 
       - name: Install System Dependencies
         run: |
@@ -32,7 +32,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --upgrade --pre yt-dlp streamlink
+          pip install --upgrade yt-dlp streamlink
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Create Cookies File
