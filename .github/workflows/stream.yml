@@ -24,6 +24,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Set up Deno (Official JS Runtime for yt-dlp)
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
       - name: Install System Dependencies
         run: |
           sudo apt-get update
