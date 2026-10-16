@@ -42,44 +42,42 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام مشغل التلفاز مع Deno لتفادي قيود الحظر"""
+    """استخراج رابط الصوت المباشر باستخدام yt-dlp ومكتبة yt-dlp-ejs المحلية"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
 
     strategies = [
-        # 1. TV Client مع Deno (بدون كوكيز - الأضمن ضد البوتات و PO Tokens)
+        # 1. yt-dlp بدون كوكيز مع yt-dlp-ejs + Node.js (الأسرع والأضمن للبثوث العامة)
         {
-            "name": "yt-dlp (player_client=tv + deno)",
+            "name": "yt-dlp (clean + yt-dlp-ejs + node)",
             "cmd": [
                 "yt-dlp", "-g",
                 "-f", "ba/ba*/bestaudio/best",
-                "--js-runtimes", "deno",
-                "--extractor-args", "youtube:player_client=tv",
+                "--js-runtimes", "node",
                 "--no-check-certificates",
                 youtube_url
             ],
             "use_cookies": False
         },
-        # 2. TV + Web Embedded Client مع Deno
+        # 2. yt-dlp مع مشغل الأندرويد والويب
         {
-            "name": "yt-dlp (player_client=tv,web_embedded + deno)",
+            "name": "yt-dlp (android,web + yt-dlp-ejs)",
             "cmd": [
                 "yt-dlp", "-g",
                 "-f", "ba/ba*/bestaudio/best",
-                "--js-runtimes", "deno",
-                "--extractor-args", "youtube:player_client=tv,web_embedded",
+                "--js-runtimes", "node",
+                "--extractor-args", "youtube:player_client=android,web",
                 "--no-check-certificates",
                 youtube_url
             ],
             "use_cookies": False
         },
-        # 3. TV Client مع الكوكيز كاحتياطي
+        # 3. yt-dlp مع الكوكيز كاحتياطي
         {
-            "name": "yt-dlp (player_client=tv + cookies + deno)",
+            "name": "yt-dlp (cookies + yt-dlp-ejs)",
             "cmd": [
                 "yt-dlp", "-g",
                 "-f", "ba/ba*/bestaudio/best",
-                "--js-runtimes", "deno",
-                "--extractor-args", "youtube:player_client=tv,mweb",
+                "--js-runtimes", "node",
                 "--no-check-certificates",
                 youtube_url
             ],
