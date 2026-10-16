@@ -40,22 +40,27 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام yt-dlp"""
+    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع التجاوز"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
     cmd = [
         "yt-dlp",
         "-g",
-        "-f", "bestaudio/best",
+        "-f", "ba*/b",
+        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "--extractor-args", "youtube:player_client=android,web",
+        "--no-check-certificates",
         youtube_url
     ]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        audio_url = result.stdout.strip()
+        audio_url = result.stdout.strip().split('\n')[0]
         if audio_url:
             log("[YOUTUBE] Audio URL extracted successfully.")
             return audio_url
     except Exception as exc:
         log(f"[ERROR] Failed to extract audio URL via yt-dlp: {exc}")
+        if hasattr(exc, 'stderr') and exc.stderr:
+            log(f"[YOUTUBE STDERR] {exc.stderr.strip()}")
     return None
 
 
@@ -93,7 +98,6 @@ def start_live_stream():
         main_ffmpeg = subprocess.Popen(command)
         time.sleep(3)
 
-        # إذا كان المفتاح مشغُولاً بالبث السابق، يعيد المحاولة في الخلفية لحين الشغور
         if main_ffmpeg.poll() is not None:
             log("[STANDBY] Stream key busy. Retrying in 5 seconds...")
             time.sleep(5)
