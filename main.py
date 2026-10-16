@@ -42,13 +42,14 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام yt-dlp"""
+    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع تفعيل JS Runtimes المعتمدة"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
     cmd = [
         "yt-dlp",
         "-g",
         "-f", "bestaudio/best",
-        "--remote-components", "ejs",
+        "--js-runtimes", "deno,node",
+        "--remote-components", "ejs:github",
         "--no-check-certificates",
         youtube_url
     ]
