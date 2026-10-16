@@ -6,11 +6,12 @@ import sys
 import time
 from pathlib import Path
 
-# إعداد سيرفر ومفتاح البث الخاص بـ Restream
+# إعداد سيرفر ومفتاح البث مع استقبال المتغيرين لضمان عدم حدوث خطأ
 RESTREAM_SERVER = os.getenv("RESTREAM_SERVER", "rtmp://live.restream.io/live")
-RESTREAM_STREAM_KEY = os.getenv(
-    "RESTREAM_STREAM_KEY",
-    "re_12443993_event75ad3a866bd44208b87e754787eef597",
+RESTREAM_STREAM_KEY = (
+    os.getenv("RESTREAM_STREAM_KEY") or 
+    os.getenv("YOUTUBE_STREAM_KEY") or 
+    "re_12443993_event75ad3a866bd44208b87e754787eef597"
 ).strip()
 
 VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "loop.mp4"))
