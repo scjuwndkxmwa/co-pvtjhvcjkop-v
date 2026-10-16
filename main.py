@@ -6,11 +6,11 @@ import sys
 import time
 from pathlib import Path
 
-# إعداد سيرفر ومفتاح البث الخاص بـ Restream مع إمكانية قراءة الـ Secret
+# إعداد سيرفر ومفتاح البث الخاص بـ Restream
 RESTREAM_SERVER = os.getenv("RESTREAM_SERVER", "rtmp://live.restream.io/live")
 RESTREAM_STREAM_KEY = os.getenv(
     "RESTREAM_STREAM_KEY",
-    os.getenv("YOUTUBE_STREAM_KEY", "re_12443993_event75ad3a866bd44208b87e754787eef597")
+    "re_12443993_event75ad3a866bd44208b87e754787eef597",
 ).strip()
 
 VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "loop.mp4"))
@@ -157,7 +157,7 @@ def main():
         raise RuntimeError("RESTREAM_STREAM_KEY is empty.")
     surahs = load_surahs()
     log("=" * 55)
-    log("[SYSTEM] Quran MP3 URLs -> loop.mp4 -> Restream (Continuous 24/7 Loop)")
+    log("[SYSTEM] Quran MP3 URLs -> loop.mp4 -> Restream (Continuous Loop)")
     
     start_live_ffmpeg()
     try:
