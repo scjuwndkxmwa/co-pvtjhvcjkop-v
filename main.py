@@ -42,52 +42,50 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستراتيجيات متدرجة لتفادي قيود يوتيوب"""
+    """استخراج رابط الصوت المباشر باستخدام مشغل التلفاز مع Deno لتفادي قيود الحظر"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
 
     strategies = [
-        # 1. yt-dlp مع مشغل الويب المدمج + كوكيز
+        # 1. TV Client مع Deno (بدون كوكيز - الأضمن ضد البوتات و PO Tokens)
         {
-            "name": "yt-dlp (web_embedded + cookies)",
+            "name": "yt-dlp (player_client=tv + deno)",
             "cmd": [
                 "yt-dlp", "-g",
                 "-f", "ba/ba*/bestaudio/best",
-                "--extractor-args", "youtube:player_client=web_embedded,mweb",
-                "--remote-components", "ejs:github",
-                "--js-runtimes", "node",
-                "--no-check-certificates",
-                youtube_url
-            ],
-            "use_cookies": True
-        },
-        # 2. yt-dlp مع مشغل الويب المدمج بدون كوكيز (للتغلب على قيود الجلسات)
-        {
-            "name": "yt-dlp (web_embedded without cookies)",
-            "cmd": [
-                "yt-dlp", "-g",
-                "-f", "ba/ba*/bestaudio/best",
-                "--extractor-args", "youtube:player_client=web_embedded,mweb",
-                "--remote-components", "ejs:github",
-                "--js-runtimes", "node",
+                "--js-runtimes", "deno",
+                "--extractor-args", "youtube:player_client=tv",
                 "--no-check-certificates",
                 youtube_url
             ],
             "use_cookies": False
         },
-        # 3. yt-dlp الافتراضي مع حل الشفرة
+        # 2. TV + Web Embedded Client مع Deno
         {
-            "name": "yt-dlp (default + ejs)",
+            "name": "yt-dlp (player_client=tv,web_embedded + deno)",
             "cmd": [
                 "yt-dlp", "-g",
                 "-f", "ba/ba*/bestaudio/best",
-                "--remote-components", "ejs:github",
-                "--js-runtimes", "node",
+                "--js-runtimes", "deno",
+                "--extractor-args", "youtube:player_client=tv,web_embedded",
+                "--no-check-certificates",
+                youtube_url
+            ],
+            "use_cookies": False
+        },
+        # 3. TV Client مع الكوكيز كاحتياطي
+        {
+            "name": "yt-dlp (player_client=tv + cookies + deno)",
+            "cmd": [
+                "yt-dlp", "-g",
+                "-f", "ba/ba*/bestaudio/best",
+                "--js-runtimes", "deno",
+                "--extractor-args", "youtube:player_client=tv,mweb",
                 "--no-check-certificates",
                 youtube_url
             ],
             "use_cookies": True
         },
-        # 4. Streamlink كخيار طوارئ أخير
+        # 4. Streamlink كخيار أخير
         {
             "name": "streamlink",
             "cmd": [
