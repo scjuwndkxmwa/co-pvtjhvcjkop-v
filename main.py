@@ -17,6 +17,8 @@ RESTREAM_STREAM_KEY = (
 YOUTUBE_LIVE_URL = "https://www.youtube.com/watch?v=IRvOLSvFI6Y"
 
 VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "loop.mp4"))
+COOKIES_FILE = Path("cookies.txt")
+
 AUDIO_BITRATE = os.getenv("AUDIO_BITRATE", "128k")
 AUDIO_RATE = "44100"
 AUDIO_CHANNELS = "2"
@@ -40,17 +42,22 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع التجاوز"""
+    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع تمرير الكوكيز"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
     cmd = [
         "yt-dlp",
         "-g",
         "-f", "ba*/b",
         "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "--extractor-args", "youtube:player_client=android,web",
         "--no-check-certificates",
         youtube_url
     ]
+
+    # إضافة خيار الكوكيز إذا كان الملف موجوداً
+    if COOKIES_FILE.is_file() and COOKIES_FILE.stat().st_size > 0:
+        log("[YOUTUBE] Using cookies.txt for authentication.")
+        cmd.extend(["--cookies", str(COOKIES_FILE)])
+
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         audio_url = result.stdout.strip().split('\n')[0]
