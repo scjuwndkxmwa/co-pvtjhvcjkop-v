@@ -42,32 +42,50 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع تفعيل JS Runtimes المعتمدة"""
+    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع المحاولة عبر streamlink كبديل"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
-    cmd = [
+    
+    # 1. المحاولة الأولى باستخدام yt-dlp
+    cmd_ytdlp = [
         "yt-dlp",
         "-g",
-        "-f", "bestaudio/best",
-        "--js-runtimes", "deno,node",
-        "--remote-components", "ejs:github",
+        "-f", "ba/ba*/bestaudio/best",
+        "--js-runtimes", "node",
         "--no-check-certificates",
         youtube_url
     ]
-
     if COOKIES_FILE.is_file() and COOKIES_FILE.stat().st_size > 0:
-        log("[YOUTUBE] Using cookies.txt for authentication.")
-        cmd.extend(["--cookies", str(COOKIES_FILE)])
+        cmd_ytdlp.extend(["--cookies", str(COOKIES_FILE)])
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(cmd_ytdlp, capture_output=True, text=True, check=True)
         audio_url = result.stdout.strip().split('\n')[0]
-        if audio_url:
-            log("[YOUTUBE] Audio URL extracted successfully.")
+        if audio_url and audio_url.startswith("http"):
+            log("[YOUTUBE] Audio URL extracted successfully via yt-dlp.")
             return audio_url
     except Exception as exc:
-        log(f"[ERROR] Failed to extract audio URL via yt-dlp: {exc}")
+        log(f"[WARN] yt-dlp extraction failed: {exc}")
         if hasattr(exc, 'stderr') and exc.stderr:
-            log(f"[YOUTUBE STDERR] {exc.stderr.strip()}")
+            log(f"[yt-dlp stderr] {exc.stderr.strip()}")
+
+    # 2. المحاولة الثانية كخطة بديلة باستخدام Streamlink
+    log("[YOUTUBE] Trying Streamlink fallback...")
+    cmd_streamlink = [
+        "streamlink",
+        "--stream-url",
+        youtube_url,
+        "audio_only,best"
+    ]
+
+    try:
+        result = subprocess.run(cmd_streamlink, capture_output=True, text=True, check=True)
+        audio_url = result.stdout.strip()
+        if audio_url and audio_url.startswith("http"):
+            log("[YOUTUBE] Audio URL extracted successfully via Streamlink.")
+            return audio_url
+    except Exception as exc:
+        log(f"[ERROR] Streamlink extraction failed: {exc}")
+
     return None
 
 
