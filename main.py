@@ -42,50 +42,80 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام yt-dlp مع المحاولة عبر streamlink كبديل"""
+    """استخراج رابط الصوت المباشر باستراتيجيات متدرجة لتفادي قيود يوتيوب"""
     log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
-    
-    # 1. المحاولة الأولى باستخدام yt-dlp
-    cmd_ytdlp = [
-        "yt-dlp",
-        "-g",
-        "-f", "ba/ba*/bestaudio/best",
-        "--js-runtimes", "node",
-        "--no-check-certificates",
-        youtube_url
+
+    strategies = [
+        # 1. yt-dlp مع مشغل الويب المدمج + كوكيز
+        {
+            "name": "yt-dlp (web_embedded + cookies)",
+            "cmd": [
+                "yt-dlp", "-g",
+                "-f", "ba/ba*/bestaudio/best",
+                "--extractor-args", "youtube:player_client=web_embedded,mweb",
+                "--remote-components", "ejs:github",
+                "--js-runtimes", "node",
+                "--no-check-certificates",
+                youtube_url
+            ],
+            "use_cookies": True
+        },
+        # 2. yt-dlp مع مشغل الويب المدمج بدون كوكيز (للتغلب على قيود الجلسات)
+        {
+            "name": "yt-dlp (web_embedded without cookies)",
+            "cmd": [
+                "yt-dlp", "-g",
+                "-f", "ba/ba*/bestaudio/best",
+                "--extractor-args", "youtube:player_client=web_embedded,mweb",
+                "--remote-components", "ejs:github",
+                "--js-runtimes", "node",
+                "--no-check-certificates",
+                youtube_url
+            ],
+            "use_cookies": False
+        },
+        # 3. yt-dlp الافتراضي مع حل الشفرة
+        {
+            "name": "yt-dlp (default + ejs)",
+            "cmd": [
+                "yt-dlp", "-g",
+                "-f", "ba/ba*/bestaudio/best",
+                "--remote-components", "ejs:github",
+                "--js-runtimes", "node",
+                "--no-check-certificates",
+                youtube_url
+            ],
+            "use_cookies": True
+        },
+        # 4. Streamlink كخيار طوارئ أخير
+        {
+            "name": "streamlink",
+            "cmd": [
+                "streamlink", "--stream-url",
+                youtube_url,
+                "audio_only,best"
+            ],
+            "use_cookies": False
+        }
     ]
-    if COOKIES_FILE.is_file() and COOKIES_FILE.stat().st_size > 0:
-        cmd_ytdlp.extend(["--cookies", str(COOKIES_FILE)])
 
-    try:
-        result = subprocess.run(cmd_ytdlp, capture_output=True, text=True, check=True)
-        audio_url = result.stdout.strip().split('\n')[0]
-        if audio_url and audio_url.startswith("http"):
-            log("[YOUTUBE] Audio URL extracted successfully via yt-dlp.")
-            return audio_url
-    except Exception as exc:
-        log(f"[WARN] yt-dlp extraction failed: {exc}")
-        if hasattr(exc, 'stderr') and exc.stderr:
-            log(f"[yt-dlp stderr] {exc.stderr.strip()}")
+    for strat in strategies:
+        cmd = list(strat["cmd"])
+        if strat["use_cookies"] and COOKIES_FILE.is_file() and COOKIES_FILE.stat().st_size > 0:
+            cmd.extend(["--cookies", str(COOKIES_FILE)])
 
-    # 2. المحاولة الثانية كخطة بديلة باستخدام Streamlink
-    log("[YOUTUBE] Trying Streamlink fallback...")
-    cmd_streamlink = [
-        "streamlink",
-        "--stream-url",
-        youtube_url,
-        "audio_only,best"
-    ]
+        log(f"[YOUTUBE] Trying strategy: {strat['name']}...")
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            audio_url = result.stdout.strip().split('\n')[0]
+            if audio_url and audio_url.startswith("http"):
+                log(f"[YOUTUBE] Success via {strat['name']}!")
+                return audio_url
+        except Exception as exc:
+            stderr_msg = exc.stderr.strip() if hasattr(exc, 'stderr') and exc.stderr else str(exc)
+            log(f"[WARN] Strategy '{strat['name']}' failed: {stderr_msg[:150]}")
 
-    try:
-        result = subprocess.run(cmd_streamlink, capture_output=True, text=True, check=True)
-        audio_url = result.stdout.strip()
-        if audio_url and audio_url.startswith("http"):
-            log("[YOUTUBE] Audio URL extracted successfully via Streamlink.")
-            return audio_url
-    except Exception as exc:
-        log(f"[ERROR] Streamlink extraction failed: {exc}")
-
+    log("[ERROR] All audio extraction strategies failed.")
     return None
 
 
