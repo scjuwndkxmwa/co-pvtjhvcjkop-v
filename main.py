@@ -42,54 +42,57 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_audio_stream_url(youtube_url):
-    """استخراج رابط الصوت المباشر باستخدام yt-dlp ومكتبة yt-dlp-ejs المحلية"""
-    log(f"[YOUTUBE] Extracting audio stream URL from: {youtube_url}")
+    """استخراج رابط البث المباشر بأعلى مرونة ممكنة عبر خيارات متعددة"""
+    log(f"[YOUTUBE] Extracting stream URL from: {youtube_url}")
 
     strategies = [
-        # 1. yt-dlp بدون كوكيز مع yt-dlp-ejs + Node.js (الأسرع والأضمن للبثوث العامة)
+        # 1. yt-dlp عبر مشغلات الهواتف (بدون كوكيز لتجنب Skipping client)
         {
-            "name": "yt-dlp (clean + yt-dlp-ejs + node)",
+            "name": "yt-dlp (ios,android without cookies)",
             "cmd": [
                 "yt-dlp", "-g",
-                "-f", "ba/ba*/bestaudio/best",
-                "--js-runtimes", "node",
+                "-f", "ba/ba*/worst/best",
+                "--extractor-args", "youtube:player_client=ios,android",
+                "--js-runtimes", "deno,node",
                 "--no-check-certificates",
                 youtube_url
             ],
             "use_cookies": False
         },
-        # 2. yt-dlp مع مشغل الأندرويد والويب
+        # 2. Streamlink (طلب الجودات المتاحة للبث المباشر)
         {
-            "name": "yt-dlp (android,web + yt-dlp-ejs)",
+            "name": "streamlink (worst,360p,best)",
             "cmd": [
-                "yt-dlp", "-g",
-                "-f", "ba/ba*/bestaudio/best",
-                "--js-runtimes", "node",
-                "--extractor-args", "youtube:player_client=android,web",
-                "--no-check-certificates",
-                youtube_url
+                "streamlink", "--stream-url",
+                youtube_url,
+                "worst,360p,best"
             ],
             "use_cookies": False
         },
-        # 3. yt-dlp مع الكوكيز كاحتياطي
+        # 3. yt-dlp مع مشغلات الويب وتمرير الكوكيز
         {
-            "name": "yt-dlp (cookies + yt-dlp-ejs)",
+            "name": "yt-dlp (web,mweb,tv with cookies)",
             "cmd": [
                 "yt-dlp", "-g",
-                "-f", "ba/ba*/bestaudio/best",
-                "--js-runtimes", "node",
+                "-f", "ba/ba*/worst/best",
+                "--extractor-args", "youtube:player_client=web,mweb,tv",
+                "--remote-components", "ejs:github",
+                "--js-runtimes", "deno,node",
                 "--no-check-certificates",
                 youtube_url
             ],
             "use_cookies": True
         },
-        # 4. Streamlink كخيار أخير
+        # 4. yt-dlp الافتراضي بدون كوكيز
         {
-            "name": "streamlink",
+            "name": "yt-dlp (default clean)",
             "cmd": [
-                "streamlink", "--stream-url",
-                youtube_url,
-                "audio_only,best"
+                "yt-dlp", "-g",
+                "-f", "ba/ba*/worst/best",
+                "--remote-components", "ejs:github",
+                "--js-runtimes", "deno,node",
+                "--no-check-certificates",
+                youtube_url
             ],
             "use_cookies": False
         }
