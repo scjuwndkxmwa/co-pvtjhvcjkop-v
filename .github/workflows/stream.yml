@@ -32,7 +32,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --upgrade yt-dlp streamlink
+          pip install --upgrade --pre yt-dlp streamlink
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Create Cookies File
