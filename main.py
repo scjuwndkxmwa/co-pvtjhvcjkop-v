@@ -13,8 +13,8 @@ RESTREAM_STREAM_KEY = (
     "re_12443993_event75ad3a866bd44208b87e754787eef597"
 ).strip()
 
-# رابط بث يوتيوب المباشر للصوت
-YOUTUBE_LIVE_URL = "https://www.youtube.com/watch?v=IRvOLSvFI6Y"
+# رابط بث يوتيوب المباشر للصوت الجديد
+YOUTUBE_LIVE_URL = "https://www.youtube.com/live/eC4LfEVxvKg?si=jecdUqpsOinLHcbU"
 
 VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "loop.mp4"))
 COOKIES_FILE = Path("cookies.txt")
