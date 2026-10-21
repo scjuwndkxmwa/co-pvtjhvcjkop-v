@@ -1,20 +1,19 @@
-import os
 import signal
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-# إعداد سيرفر ومفتاح البث الخاص بك
-RESTREAM_SERVER = os.getenv("RESTREAM_SERVER", "rtmp://live.restream.io/live")
-RESTREAM_STREAM_KEY = os.getenv("RESTREAM_STREAM_KEY", "re_12443993_event57fd896c7bb84afa8bc5627a989a6be1").strip()
+# إعداد سيرفر ومفتاح البث مباشرة
+RESTREAM_SERVER = "rtmp://live.restream.io/live"
+RESTREAM_STREAM_KEY = "re_12443993_event57fd896c7bb84afa8bc5627a989a6be1"
 
-# الرابط المباشر الدائم لملف الصوت بدون الرموز المؤقتة
-RADIO_STREAM_URL = os.getenv("RADIO_STREAM_URL", "https://n08.radiojar.com/4wqre23fytzuv")
+# الرابط المباشر الدائم لملف الصوت
+RADIO_STREAM_URL = "https://n08.radiojar.com/4wqre23fytzuv"
 
-VIDEO_FILE = Path(os.getenv("VIDEO_FILE", "loop.mp4"))
+VIDEO_FILE = Path("loop.mp4")
 
-AUDIO_BITRATE = os.getenv("AUDIO_BITRATE", "128k")
+AUDIO_BITRATE = "128k"
 AUDIO_RATE = "44100"
 AUDIO_CHANNELS = "2"
 
@@ -70,35 +69,4 @@ def start_live_stream():
         while not stop_requested:
             retcode = main_ffmpeg.poll()
             if retcode is not None:
-                log(f"[WARN] FFmpeg exited with code {retcode}. Reconnecting in 5 seconds...")
-                time.sleep(5)
-                break
-            time.sleep(3)
-
-def cleanup():
-    global main_ffmpeg
-    if main_ffmpeg and main_ffmpeg.poll() is None:
-        main_ffmpeg.terminate()
-        try:
-            main_ffmpeg.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            main_ffmpeg.kill()
-    log("[SYSTEM] Stream runner stopped.")
-
-def main():
-    if not RESTREAM_STREAM_KEY:
-        raise RuntimeError("RESTREAM_STREAM_KEY is empty.")
-    log("=" * 55)
-    log("[SYSTEM] Radio Audio + loop.mp4 -> Restream (Continuous 24/7)")
-    
-    try:
-        start_live_stream()
-    finally:
-        cleanup()
-
-if __name__ == "__main__":
-    try:
-        main()
-    except Exception as exc:
-        log(f"[FATAL] {exc}")
-        sys.exit(1)
+                log(f"[WARN] FFmpeg exited with code {ret
