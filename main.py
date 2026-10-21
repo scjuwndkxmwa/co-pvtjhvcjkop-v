@@ -69,4 +69,33 @@ def start_live_stream():
         while not stop_requested:
             retcode = main_ffmpeg.poll()
             if retcode is not None:
-                log(f"[WARN] FFmpeg exited with code {ret
+                log(f"[WARN] FFmpeg exited with code {retcode}. Reconnecting in 5 seconds...")
+                time.sleep(5)
+                break
+            time.sleep(3)
+
+def cleanup():
+    global main_ffmpeg
+    if main_ffmpeg and main_ffmpeg.poll() is None:
+        main_ffmpeg.terminate()
+        try:
+            main_ffmpeg.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            main_ffmpeg.kill()
+    log("[SYSTEM] Stream runner stopped.")
+
+def main():
+    log("=" * 55)
+    log("[SYSTEM] Radio Audio + loop.mp4 -> Restream (Continuous 24/7)")
+    
+    try:
+        start_live_stream()
+    finally:
+        cleanup()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        log(f"[FATAL] {exc}")
+        sys.exit(1)
