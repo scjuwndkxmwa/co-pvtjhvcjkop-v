@@ -1,8 +1,13 @@
-FROM python:3.12-slim
-ENV PYTHONUNBUFFERED=1
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.10-slim
+
+# تثبيت FFmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
-COPY . .
-CMD ["python", "-u", "main.py"]
+
+# تثبيت مكتبة requests
+RUN pip install --no-cache-dir requests
+
+COPY . /app
+
+CMD ["python", "main.py"]
