@@ -9,7 +9,7 @@ RESTREAM_SERVER = "rtmp://live.restream.io/live"
 RESTREAM_STREAM_KEY = "re_12443993_event57fd896c7bb84afa8bc5627a989a6be1"
 
 # الرابط المباشر الدائم لملف الصوت
-RADIO_STREAM_URL = "https://n08.radiojar.com/4wqre23fytzuv"
+RADIO_STREAM_URL = "https://qurango.net/radio/yasser_aldosari"
 
 VIDEO_FILE = Path("loop.mp4")
 
