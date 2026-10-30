@@ -36,15 +36,21 @@ signal.signal(signal.SIGINT, request_stop)
 
 
 def get_tiktok_rtmp_url():
-    """استخرج رابط البث RTMP من تيك توك باستخدام Session ID"""
+    """استخراج رابط البث RTMP من تيك توك مع إيقاف الهدايا وتفعيل طلبات الجيست"""
     url = "https://www.tiktok.com/api/live/web/room/create/"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Cookie": f"sessionid={TIKTOK_SESSION_ID};",
     }
+    
+    # إعدادات البث (إغلاق الهدايا + تفعيل الجيست)
     params = {
         "title": "تلاوات قرآنية 24 ساعة",
-        "mode": "3",  # mode 3 مخصص للبث عبر برامج OBS / RTMP
+        "mode": "3",                     # mode 3 مخصص للبث عبر برامج OBS / RTMP
+        "enable_gift": "false",         # إغلاق الهدايا
+        "enable_live_gift": "0",        # إيقاف تلقي الهدايا المباشرة
+        "enable_multi_guest": "true",   # تفعيل نظام القوست / Multi-guest
+        "multi_guest_permission": "1"   # السماح بالانضمام وطلبات الجيست
     }
 
     try:
@@ -54,7 +60,7 @@ def get_tiktok_rtmp_url():
         # استخراج رابط البث المباشر
         rtmp_url = data.get("data", {}).get("stream_url", {}).get("rtmp_push_url")
         if rtmp_url:
-            log("[TIKTOK API] Successfully fetched TikTok RTMP Stream URL!")
+            log("[TIKTOK API] Successfully fetched TikTok RTMP Stream URL (Gifts Off | Guests Enabled)!")
             return rtmp_url
         else:
             log(f"[TIKTOK API] Failed to fetch stream URL. Response: {data}")
@@ -133,4 +139,45 @@ def start_live_stream():
         main_ffmpeg = subprocess.Popen(command)
         time.sleep(3)
 
-        if main_ffmpeg.poll() is not None
+        if main_ffmpeg.poll() is not None:
+            log("[STANDBY] FFmpeg failed to start or URL expired. Retrying in 5 seconds...")
+            time.sleep(5)
+            continue
+
+        log("[LIVE] Stream connected successfully and live on TikTok!")
+        while not stop_requested:
+            retcode = main_ffmpeg.poll()
+            if retcode is not None:
+                log(f"[WARN] FFmpeg exited with code {retcode}. Reconnecting in 5 seconds...")
+                time.sleep(5)
+                break
+            time.sleep(3)
+
+
+def cleanup():
+    global main_ffmpeg
+    if main_ffmpeg and main_ffmpeg.poll() is None:
+        main_ffmpeg.terminate()
+        try:
+            main_ffmpeg.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            main_ffmpeg.kill()
+    log("[SYSTEM] Stream runner stopped.")
+
+
+def main():
+    log("=" * 55)
+    log("[SYSTEM] Radio Audio + loop.mp4 -> TikTok Live (Continuous 24/7 - Gifts Off, Guests On)")
+
+    try:
+        start_live_stream()
+    finally:
+        cleanup()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        log(f"[FATAL] {exc}")
+        sys.exit(1)
